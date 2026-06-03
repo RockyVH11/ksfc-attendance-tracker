@@ -1,0 +1,33 @@
+export const U19G_ROSTER: { firstName: string; lastName: string }[] = [
+  { firstName: "Shayla", lastName: "Anuskewicz" },
+  { firstName: "Julie", lastName: "Van Husen" },
+  { firstName: "Addy", lastName: "Hahn" },
+  { firstName: "Maddi", lastName: "Gamboa" },
+  { firstName: "Macy", lastName: "Tolin" },
+  { firstName: "Madyx", lastName: "Navarez" },
+  { firstName: "Keira", lastName: "Staley" },
+  { firstName: "Luna", lastName: "Alvarez" },
+  { firstName: "Neyla", lastName: "Varella" },
+  { firstName: "Kenzie", lastName: "Yonts" },
+  { firstName: "Kenzie", lastName: "Diaz" },
+  { firstName: "Ella", lastName: "Cook" },
+  { firstName: "Jillian", lastName: "Bejil" },
+  { firstName: "Joseline", lastName: "Bejil" },
+  { firstName: "Kyra", lastName: "Shannon" },
+  { firstName: "Emily", lastName: "Rodriguez" },
+  { firstName: "Mia", lastName: "Herrera" },
+  { firstName: "Hope", lastName: "Richardson" },
+  { firstName: "Hannah", lastName: "Zubiate" },
+  { firstName: "Nadia", lastName: "Garcia" },
+  { firstName: "Analei", lastName: "Garcia" },
+  { firstName: "Karyss", lastName: "Craig" },
+  { firstName: "Lilly-Ann", lastName: "Tash" },
+  { firstName: "Callie", lastName: "Madrid" },
+  { firstName: "Emma", lastName: "Lopez" },
+  { firstName: "Vianney", lastName: "Jurado" },
+];
+
+export const TEAMS = [
+  { name: "KSFC U19G Van Husen", slug: "ksfc-u19g-van-husen" },
+  { name: "KSFC U16G Richardson", slug: "ksfc-u16g-richardson" },
+] as const;

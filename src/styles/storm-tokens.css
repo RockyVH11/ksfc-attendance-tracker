@@ -1,0 +1,21 @@
+/* Kernow Storm FC — club tokens (sync with Kernow-Storm-FC-WTX-soccer-club/shared/theme/tokens.css) */
+:root {
+  --color-brand-blue: #003087;
+  --color-brand-red: #ed1c24;
+  --color-brand-gold: #c5a059;
+  --color-brand-yellow: #ffd700;
+  --color-brand-black: #0a0a0a;
+  --color-primary: var(--color-brand-blue);
+  --color-primary-muted: #00235c;
+  --color-accent: var(--color-brand-red);
+  --color-bg: #f4f6fa;
+  --color-surface: #ffffff;
+  --color-border: #d4dae5;
+  --color-text: var(--color-brand-black);
+  --color-text-muted: #4a5568;
+  --color-success: #1b7f5a;
+  --color-warning: #d4a017;
+  --color-danger: #b91c1c;
+  --radius-md: 10px;
+  --space-4: 1rem;
+}

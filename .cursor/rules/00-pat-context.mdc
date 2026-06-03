@@ -1,0 +1,14 @@
+---
+description: KSFC Attendance Tracker (PAT) app context
+globs:
+  - "**/*"
+---
+
+# PAT — KSFC Attendance Tracker
+
+Path: `~/Developer/PAT/`. Platform map: `~/Developer/STORM-PLATFORM.md`.
+
+- Stack: Next.js 15 App Router, Prisma, Neon, JWT session (`pat_session` cookie).
+- Users: staff only in v1 (`ADMIN`/`COACH`); `PLAYER` role reserved.
+- Teams scoped via `UserTeamAccess`. Player names are minors' PII — no logging of full rosters.
+- Planned vs actual sessions; attendance enum: YES, NO, NOT_COMMUNICATED.

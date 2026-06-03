@@ -1,36 +1,68 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# KSFC Attendance Tracker (PAT)
 
-## Getting Started
+Mobile-friendly training attendance for Kernow Storm FC. Next.js 15, Prisma, Neon Postgres, Vercel.
 
-First, run the development server:
+## Local setup
+
+1. Copy `.env.example` to `.env` and set `DATABASE_URL` (Neon) and `SESSION_SECRET` (32+ chars).
+
+2. Install and sync the database:
+
+```bash
+cd ~/Developer/PAT
+npm install
+npx prisma migrate deploy   # or: npm run db:push for a fresh dev DB
+npm run db:seed
+```
+
+3. Run:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000). Default seed logins:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| First name (username) | Password (default) |
+|-----------------------|-------------------|
+| `rocky` | `SEED_ADMIN_PASSWORD` (`changeme`) |
+| `hobie` | same (or `SEED_HOBIE_PASSWORD`) |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Teams seeded: **KSFC U19G Van Husen** (26 players), **KSFC U16G Richardson** (empty roster).
 
-## Learn More
+## Seasons & archive
 
-To learn more about Next.js, take a look at the following resources:
+Each team tracks data in an **active season**. Tap **Season: …** in the header (or Roster → Season & archive) to:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- **Archive & start fresh** — keeps old attendance/games as read-only history; new season starts empty (roster unchanged — archive players on Roster as they leave).
+- View archived season summaries (session/game counts).
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+After nationals, archive (e.g. `2025 Nationals`) and start `2026-27` when you begin counting attendance for the new cycle.
 
-## Deploy on Vercel
+## Games
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+**Games** tab: date, time, opponent, who played, goals, assists, rating 1–5, per-player notes, team notes, opponent notes. **Season stats** on the games list shows totals per player.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Run new migration after pull:
+
+```bash
+npx prisma migrate deploy
+```
+
+## GitHub & Vercel
+
+1. Build and test locally first.
+2. Create a private repo (GitHub UI or `gh repo create ksfc-attendance-tracker --private --source=. --remote=origin --push`).
+3. Import the repo in Vercel; set the same env vars as `.env`.
+4. After deploy, run `npx prisma migrate deploy` against production Neon (from your machine or CI).
+5. Run seed once on production: `DATABASE_URL="..." npm run db:seed`
+
+## Add to home screen (PWA)
+
+In Safari/Chrome: Share → **Add to Home Screen**. The app uses `manifest.ts` and KSFC-themed icons.
+
+## Roadmap (schema-ready)
+
+- Player logins (RSVP on planned sessions)
+- Performance score 1–5 and notes per session
+- Player Tracker roster import
