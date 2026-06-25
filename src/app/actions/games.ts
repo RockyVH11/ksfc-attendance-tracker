@@ -23,6 +23,8 @@ const newGameSchema = z.object({
   gameDate: z.string().min(1),
   gameTime: z.string().optional(),
   opponent: z.string().min(1).max(120),
+  scoreUs: z.coerce.number().int().min(0).optional(),
+  scoreThem: z.coerce.number().int().min(0).optional(),
 });
 
 export async function createGameAction(teamId: string, formData: FormData) {
@@ -33,6 +35,8 @@ export async function createGameAction(teamId: string, formData: FormData) {
     gameDate: formData.get("gameDate"),
     gameTime: formData.get("gameTime"),
     opponent: formData.get("opponent"),
+    scoreUs: formData.get("scoreUs"),
+    scoreThem: formData.get("scoreThem"),
   });
   if (!parsed.success) redirect(`/teams/${teamId}/games/new?error=invalid`);
 
@@ -40,9 +44,30 @@ export async function createGameAction(teamId: string, formData: FormData) {
     gameDate: parseDateString(parsed.data.gameDate),
     gameTime: parsed.data.gameTime,
     opponent: parsed.data.opponent,
+    scoreUs: parsed.data.scoreUs ?? 0,
+    scoreThem: parsed.data.scoreThem ?? 0,
   });
 
   redirect(`/teams/${teamId}/games/${game.id}`);
+}
+
+export async function updateGameScoreAction(
+  teamId: string,
+  gameId: string,
+  formData: FormData,
+) {
+  const session = await requireStaffSession();
+  await requireTeamAccess(session, teamId);
+
+  const scoreUs = Math.max(0, Number(formData.get("scoreUs")) || 0);
+  const scoreThem = Math.max(0, Number(formData.get("scoreThem")) || 0);
+
+  await prisma.game.updateMany({
+    where: { id: gameId, teamId },
+    data: { scoreUs, scoreThem },
+  });
+
+  for (const p of gamePaths(teamId, gameId)) revalidatePath(p);
 }
 
 export async function updateGameNotesAction(teamId: string, gameId: string, formData: FormData) {
@@ -75,6 +100,7 @@ export async function togglePlayingAction(
   });
 
   revalidatePath(`/teams/${teamId}/games/${gameId}`);
+  revalidatePath(`/teams/${teamId}/games/stats`);
 }
 
 export async function updateAppearanceAction(
@@ -88,6 +114,8 @@ export async function updateAppearanceAction(
 
   const goals = Math.max(0, Number(formData.get("goals")) || 0);
   const assists = Math.max(0, Number(formData.get("assists")) || 0);
+  const yellowCards = Math.max(0, Number(formData.get("yellowCards")) || 0);
+  const redCards = Math.max(0, Number(formData.get("redCards")) || 0);
   const ratingRaw = formData.get("rating");
   const rating =
     ratingRaw && String(ratingRaw).length > 0
@@ -97,7 +125,7 @@ export async function updateAppearanceAction(
 
   await prisma.gameAppearance.updateMany({
     where: { gameId, playerId, game: { teamId } },
-    data: { goals, assists, rating, notes },
+    data: { goals, assists, yellowCards, redCards, rating, notes },
   });
 
   for (const p of gamePaths(teamId, gameId)) revalidatePath(p);

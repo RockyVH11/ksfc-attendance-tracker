@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { TeamShell } from "@/components/team-shell";
-import { formatGameWhen, listSeasonGames } from "@/lib/games";
+import { formatGameScore, formatGameWhen, listSeasonGames } from "@/lib/games";
 import { getTeamForPage } from "@/lib/team-page";
 import { GameStatus } from "@prisma/client";
 
@@ -47,7 +47,8 @@ export default async function GamesPage({
               >
                 <p className="text-sm font-medium">vs {g.opponent}</p>
                 <p className="text-xs text-[var(--color-text-muted)]">
-                  {formatGameWhen(g.gameDate, g.gameTime)} · {g._count.appearances}{" "}
+                  {formatGameWhen(g.gameDate, g.gameTime)} ·{" "}
+                  {formatGameScore(g.scoreUs, g.scoreThem)} · {g._count.appearances}{" "}
                   playing
                   {g.status === GameStatus.COMPLETED ? " · Final" : ""}
                 </p>

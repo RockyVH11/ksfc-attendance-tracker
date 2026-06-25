@@ -1,0 +1,6 @@
+-- Game score (US / Them) and per-player cards
+ALTER TABLE "Game" ADD COLUMN "scoreUs" INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE "Game" ADD COLUMN "scoreThem" INTEGER NOT NULL DEFAULT 0;
+
+ALTER TABLE "GameAppearance" ADD COLUMN "yellowCards" INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE "GameAppearance" ADD COLUMN "redCards" INTEGER NOT NULL DEFAULT 0;

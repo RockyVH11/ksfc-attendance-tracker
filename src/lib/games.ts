@@ -33,6 +33,8 @@ export async function getGameWithRoster(gameId: string, teamId: string) {
       isPlaying: app?.isPlaying ?? false,
       goals: app?.goals ?? 0,
       assists: app?.assists ?? 0,
+      yellowCards: app?.yellowCards ?? 0,
+      redCards: app?.redCards ?? 0,
       rating: app?.rating ?? null,
       notes: app?.notes ?? "",
     };
@@ -47,6 +49,8 @@ export async function createGame(
     gameDate: Date;
     gameTime?: string;
     opponent: string;
+    scoreUs?: number;
+    scoreThem?: number;
   },
 ) {
   const season = await requireActiveSeason(teamId);
@@ -57,6 +61,8 @@ export async function createGame(
       gameDate: data.gameDate,
       gameTime: data.gameTime?.trim() || null,
       opponent: data.opponent.trim(),
+      scoreUs: data.scoreUs ?? 0,
+      scoreThem: data.scoreThem ?? 0,
     },
   });
 
@@ -76,13 +82,18 @@ export type PlayerSeasonGameStats = {
   gamesPlayed: number;
   goals: number;
   assists: number;
+  yellowCards: number;
+  redCards: number;
   avgRating: number | null;
 };
 
 export type SeasonGameStats = {
   gamesPlayed: number;
-  totalGoals: number;
+  goalsFor: number;
+  goalsAgainst: number;
   totalAssists: number;
+  totalYellowCards: number;
+  totalRedCards: number;
   perPlayer: PlayerSeasonGameStats[];
 };
 
@@ -98,10 +109,19 @@ export async function getSeasonGameStats(teamId: string): Promise<SeasonGameStat
     orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
   });
 
+  const goalsFor = games.reduce((s, g) => s + g.scoreUs, 0);
+  const goalsAgainst = games.reduce((s, g) => s + g.scoreThem, 0);
+
+  let totalAssists = 0;
+  let totalYellowCards = 0;
+  let totalRedCards = 0;
+
   const perPlayer: PlayerSeasonGameStats[] = players.map((p) => {
     let gamesPlayed = 0;
     let goals = 0;
     let assists = 0;
+    let yellowCards = 0;
+    let redCards = 0;
     const ratings: number[] = [];
 
     for (const g of games) {
@@ -110,8 +130,14 @@ export async function getSeasonGameStats(teamId: string): Promise<SeasonGameStat
       gamesPlayed++;
       goals += app.goals;
       assists += app.assists;
+      yellowCards += app.yellowCards;
+      redCards += app.redCards;
       if (app.rating != null) ratings.push(app.rating);
     }
+
+    totalAssists += assists;
+    totalYellowCards += yellowCards;
+    totalRedCards += redCards;
 
     const avgRating =
       ratings.length > 0
@@ -124,19 +150,21 @@ export async function getSeasonGameStats(teamId: string): Promise<SeasonGameStat
       gamesPlayed,
       goals,
       assists,
+      yellowCards,
+      redCards,
       avgRating,
     };
   });
 
-  perPlayer.sort((a, b) => b.goals - a.goals || b.assists - a.assists);
-
-  const totalGoals = perPlayer.reduce((s, p) => s + p.goals, 0);
-  const totalAssists = perPlayer.reduce((s, p) => s + p.assists, 0);
+  perPlayer.sort((a, b) => b.gamesPlayed - a.gamesPlayed || b.goals - a.goals);
 
   return {
     gamesPlayed: games.length,
-    totalGoals,
+    goalsFor,
+    goalsAgainst,
     totalAssists,
+    totalYellowCards,
+    totalRedCards,
     perPlayer,
   };
 }
@@ -146,23 +174,6 @@ export function formatGameWhen(gameDate: Date, gameTime: string | null) {
   return gameTime ? `${date} · ${gameTime}` : date;
 }
 
-export async function getGameSummary(gameId: string, teamId: string) {
-  const game = await prisma.game.findFirst({
-    where: { id: gameId, teamId },
-    include: {
-      appearances: { where: { isPlaying: true }, include: { player: true } },
-    },
-  });
-  if (!game) return null;
-
-  const goals = game.appearances.reduce((s, a) => s + a.goals, 0);
-  const assists = game.appearances.reduce((s, a) => s + a.assists, 0);
-
-  return {
-    game,
-    when: formatGameWhen(game.gameDate, game.gameTime),
-    lineupCount: game.appearances.length,
-    goals,
-    assists,
-  };
+export function formatGameScore(scoreUs: number, scoreThem: number) {
+  return `${scoreUs}–${scoreThem}`;
 }

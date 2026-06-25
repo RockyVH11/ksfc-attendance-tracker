@@ -14,6 +14,8 @@ type Props = {
   isPlaying: boolean;
   goals: number;
   assists: number;
+  yellowCards: number;
+  redCards: number;
   rating: number | null;
   notes: string;
 };
@@ -25,6 +27,8 @@ export function GamePlayerRow({
   isPlaying,
   goals,
   assists,
+  yellowCards,
+  redCards,
   rating,
   notes,
 }: Props) {
@@ -64,51 +68,66 @@ export function GamePlayerRow({
       {isPlaying ? (
         <form
           action={updateAppearanceAction.bind(null, teamId, gameId, player.id)}
-          className="grid grid-cols-4 gap-1.5 items-end"
+          className="space-y-1.5"
         >
-          <label className="text-[10px]">
-            G
-            <input
-              name="goals"
-              type="number"
-              min={0}
-              defaultValue={goals}
-              className="w-full min-h-8 px-1 rounded border border-[var(--color-border)] text-xs"
-            />
-          </label>
-          <label className="text-[10px]">
-            A
-            <input
-              name="assists"
-              type="number"
-              min={0}
-              defaultValue={assists}
-              className="w-full min-h-8 px-1 rounded border border-[var(--color-border)] text-xs"
-            />
-          </label>
-          <label className="text-[10px]">
-            1–5
-            <select
-              name="rating"
-              defaultValue={rating ?? ""}
-              className="w-full min-h-8 px-0.5 rounded border border-[var(--color-border)] text-xs"
-            >
-              <option value="">—</option>
-              {[1, 2, 3, 4, 5].map((n) => (
-                <option key={n} value={n}>
-                  {n}
-                </option>
-              ))}
-            </select>
-          </label>
-          <button
-            type="submit"
-            disabled={pending}
-            className="min-h-8 rounded bg-[var(--color-primary)] text-white text-[10px] font-semibold"
-          >
-            Save
-          </button>
-          <label className="col-span-4 text-[10px]">
+          <div className="grid grid-cols-5 gap-1 items-end">
+            <label className="text-[10px]">
+              G
+              <input
+                name="goals"
+                type="number"
+                min={0}
+                defaultValue={goals}
+                className="w-full min-h-8 px-1 rounded border border-[var(--color-border)] text-xs"
+              />
+            </label>
+            <label className="text-[10px]">
+              A
+              <input
+                name="assists"
+                type="number"
+                min={0}
+                defaultValue={assists}
+                className="w-full min-h-8 px-1 rounded border border-[var(--color-border)] text-xs"
+              />
+            </label>
+            <label className="text-[10px]">
+              YC
+              <input
+                name="yellowCards"
+                type="number"
+                min={0}
+                defaultValue={yellowCards}
+                className="w-full min-h-8 px-1 rounded border border-[var(--color-border)] text-xs"
+              />
+            </label>
+            <label className="text-[10px]">
+              RC
+              <input
+                name="redCards"
+                type="number"
+                min={0}
+                defaultValue={redCards}
+                className="w-full min-h-8 px-1 rounded border border-[var(--color-border)] text-xs"
+              />
+            </label>
+            <label className="text-[10px]">
+              1–5
+              <select
+                name="rating"
+                defaultValue={rating ?? ""}
+                className="w-full min-h-8 px-0.5 rounded border border-[var(--color-border)] text-xs"
+              >
+                <option value="">—</option>
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <option key={n} value={n}>
+                    {n}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+          <label className="block text-[10px]">
             Notes
             <input
               name="notes"
@@ -118,6 +137,13 @@ export function GamePlayerRow({
               className="w-full min-h-8 px-2 rounded border border-[var(--color-border)] text-xs"
             />
           </label>
+          <button
+            type="submit"
+            disabled={pending}
+            className="w-full min-h-8 rounded bg-[var(--color-primary)] text-white text-[10px] font-semibold"
+          >
+            Save stats
+          </button>
         </form>
       ) : null}
     </li>

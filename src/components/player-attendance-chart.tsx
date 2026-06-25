@@ -15,9 +15,30 @@ import { attendanceRateBarFill } from "@/lib/attendance-display";
 
 type Props = {
   players: PlayerStatRow[];
-  /** full = horizontal bars, large labels, for dedicated chart page */
   variant?: "full";
 };
+
+function BoldYAxisTick(props: {
+  x?: string | number;
+  y?: string | number;
+  payload?: { value?: string };
+}) {
+  const x = typeof props.x === "number" ? props.x : Number(props.x);
+  const y = typeof props.y === "number" ? props.y : Number(props.y);
+  if (Number.isNaN(x) || Number.isNaN(y) || !props.payload?.value) return null;
+  return (
+    <text
+      x={x - 4}
+      y={y + 4}
+      textAnchor="end"
+      fill="var(--color-text)"
+      fontSize={14}
+      fontWeight={700}
+    >
+      {props.payload.value}
+    </text>
+  );
+}
 
 export function PlayerAttendanceChart({ players, variant }: Props) {
   if (players.length === 0) {
@@ -35,7 +56,7 @@ export function PlayerAttendanceChart({ players, variant }: Props) {
 
   const isFull = variant === "full";
   const chartHeight = isFull
-    ? Math.max(480, players.length * 36 + 80)
+    ? Math.max(520, players.length * 40 + 80)
     : 208;
 
   return (
@@ -52,7 +73,7 @@ export function PlayerAttendanceChart({ players, variant }: Props) {
             data={data}
             margin={
               isFull
-                ? { top: 8, right: 16, left: 8, bottom: 8 }
+                ? { top: 8, right: 20, left: 4, bottom: 8 }
                 : { top: 4, right: 4, left: -20, bottom: 48 }
             }
           >
@@ -62,14 +83,14 @@ export function PlayerAttendanceChart({ players, variant }: Props) {
                 <XAxis
                   type="number"
                   domain={[0, 100]}
-                  tick={{ fontSize: 13 }}
+                  tick={{ fontSize: 13, fill: "var(--color-text)" }}
                   tickFormatter={(v) => `${v}%`}
                 />
                 <YAxis
                   type="category"
                   dataKey="name"
-                  width={130}
-                  tick={{ fontSize: 12 }}
+                  width={155}
+                  tick={BoldYAxisTick}
                 />
               </>
             ) : (
@@ -92,10 +113,7 @@ export function PlayerAttendanceChart({ players, variant }: Props) {
             <Tooltip formatter={(v) => [`${v}%`, "Attendance"]} />
             <Bar dataKey="pct" radius={isFull ? [0, 4, 4, 0] : [3, 3, 0, 0]}>
               {data.map((entry) => (
-                <Cell
-                  key={entry.name}
-                  fill={attendanceRateBarFill(entry.pct)}
-                />
+                <Cell key={entry.name} fill={attendanceRateBarFill(entry.pct)} />
               ))}
             </Bar>
           </BarChart>

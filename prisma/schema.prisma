@@ -159,6 +159,8 @@ model Game {
   gameDate       DateTime   @db.Date
   gameTime       String?
   opponent       String
+  scoreUs        Int        @default(0)
+  scoreThem      Int        @default(0)
   teamNotes      String?
   opponentNotes  String?
   status         GameStatus @default(SCHEDULED)
@@ -177,9 +179,11 @@ model GameAppearance {
   gameId    String
   playerId  String
   isPlaying Boolean  @default(false)
-  goals     Int      @default(0)
-  assists   Int      @default(0)
-  rating    Int?
+  goals        Int      @default(0)
+  assists      Int      @default(0)
+  yellowCards  Int      @default(0)
+  redCards     Int      @default(0)
+  rating       Int?
   notes     String?
   updatedAt DateTime @updatedAt
 

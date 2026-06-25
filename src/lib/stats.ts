@@ -34,6 +34,21 @@ export type OverallStats = {
   overallRatePct: number;
 };
 
+export type SessionPlayerRow = {
+  playerId: string;
+  name: string;
+  status: AttendanceStatus | null;
+};
+
+export type SessionDetail = {
+  sessionId: string;
+  dateLabel: string;
+  rosterSize: number;
+  players: SessionPlayerRow[];
+};
+
+export type SessionFilter = "YES" | "NO" | "NOT_COMMUNICATED";
+
 function shortPlayerName(firstName: string, lastName: string) {
   const initial = lastName.charAt(0) ? `${lastName.charAt(0)}.` : "";
   return `${firstName} ${initial}`.trim();
@@ -74,6 +89,53 @@ export async function getSessionStats(teamId: string): Promise<SessionStatRow[]>
       notCommunicated,
       rosterSize: s.records.length,
     };
+  });
+}
+
+export async function getSessionDetail(
+  teamId: string,
+  sessionId: string,
+): Promise<SessionDetail | null> {
+  const season = await requireActiveSeason(teamId);
+  const session = await prisma.trainingSession.findFirst({
+    where: {
+      id: sessionId,
+      teamId,
+      seasonId: season.id,
+      kind: SessionKind.ACTUAL,
+      status: { in: [SessionStatus.ACTIVE, SessionStatus.COMPLETED] },
+    },
+    include: {
+      records: {
+        include: { player: true },
+        orderBy: { player: { lastName: "asc" } },
+      },
+    },
+  });
+  if (!session) return null;
+
+  return {
+    sessionId: session.id,
+    dateLabel: formatDateLabel(session.sessionDate),
+    rosterSize: session.records.length,
+    players: session.records
+      .filter((r) => r.player.isActive)
+      .map((r) => ({
+        playerId: r.playerId,
+        name: playerDisplayName(r.player),
+        status: r.status,
+      })),
+  };
+}
+
+export function filterSessionPlayers(
+  players: SessionPlayerRow[],
+  filter: SessionFilter,
+): SessionPlayerRow[] {
+  return players.filter((p) => {
+    if (filter === AttendanceStatus.YES) return p.status === AttendanceStatus.YES;
+    if (filter === AttendanceStatus.NO) return p.status === AttendanceStatus.NO;
+    return p.status === AttendanceStatus.NOT_COMMUNICATED;
   });
 }
 

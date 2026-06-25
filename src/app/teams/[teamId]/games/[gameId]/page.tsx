@@ -2,10 +2,11 @@ import { notFound } from "next/navigation";
 import {
   completeGameAction,
   updateGameNotesAction,
+  updateGameScoreAction,
 } from "@/app/actions/games";
 import { GamePlayerRow } from "@/components/game-player-row";
 import { TeamShell } from "@/components/team-shell";
-import { formatGameWhen, getGameWithRoster } from "@/lib/games";
+import { formatGameScore, formatGameWhen, getGameWithRoster } from "@/lib/games";
 import { getTeamForPage } from "@/lib/team-page";
 
 export default async function GameDetailPage({
@@ -33,6 +34,48 @@ export default async function GameDetailPage({
           {formatGameWhen(game.gameDate, game.gameTime)}
         </p>
       </div>
+
+      <form
+        action={updateGameScoreAction.bind(null, teamId, gameId)}
+        className="mb-4 rounded-md border-2 border-[var(--color-primary)] bg-[var(--color-surface)] p-3"
+      >
+        <p className="text-xs font-semibold mb-2">Final score (team totals)</p>
+        <div className="flex items-end gap-3">
+          <label className="text-[10px] font-medium flex-1">
+            US
+            <input
+              name="scoreUs"
+              type="number"
+              min={0}
+              defaultValue={game.scoreUs}
+              className="mt-1 w-full min-h-10 px-2 rounded border border-[var(--color-border)] text-lg font-bold text-center"
+            />
+          </label>
+          <span className="pb-2 text-lg font-bold text-[var(--color-text-muted)]">–</span>
+          <label className="text-[10px] font-medium flex-1">
+            Them
+            <input
+              name="scoreThem"
+              type="number"
+              min={0}
+              defaultValue={game.scoreThem}
+              className="mt-1 w-full min-h-10 px-2 rounded border border-[var(--color-border)] text-lg font-bold text-center"
+            />
+          </label>
+        </div>
+        <p className="text-[10px] text-[var(--color-text-muted)] mt-2">
+          Season GF/GA use this score — not the sum of player goals.
+        </p>
+        <button
+          type="submit"
+          className="mt-2 w-full min-h-9 rounded bg-[var(--color-primary)] text-white text-xs font-semibold"
+        >
+          Save score
+        </button>
+        <p className="mt-2 text-center text-sm font-bold text-[var(--color-primary)]">
+          {formatGameScore(game.scoreUs, game.scoreThem)}
+        </p>
+      </form>
 
       <form
         action={updateGameNotesAction.bind(null, teamId, gameId)}
@@ -65,7 +108,7 @@ export default async function GameDetailPage({
       </form>
 
       <p className="text-xs text-[var(--color-text-muted)] mb-2">
-        Check Playing, then goals, assists, rating, notes.
+        Player G/A/YC/RC are for individual tracking (own goals, guests, etc.).
       </p>
       <ul className="space-y-1.5">
         {rows.map((r) => (
@@ -77,6 +120,8 @@ export default async function GameDetailPage({
             isPlaying={r.isPlaying}
             goals={r.goals}
             assists={r.assists}
+            yellowCards={r.yellowCards}
+            redCards={r.redCards}
             rating={r.rating}
             notes={r.notes}
           />

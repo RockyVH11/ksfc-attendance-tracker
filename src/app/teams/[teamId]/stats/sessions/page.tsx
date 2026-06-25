@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { TeamShell } from "@/components/team-shell";
 import { getSessionStats } from "@/lib/stats";
 import { getTeamForPage } from "@/lib/team-page";
@@ -27,24 +28,27 @@ export default async function StatsSessionsPage({
       ) : (
         <ul className="space-y-1">
           {sessions.map((s) => (
-            <li
-              key={s.sessionId}
-              className="flex items-center justify-between gap-2 text-sm border-b border-[var(--color-border)] py-2"
-            >
-              <span className="font-medium">{s.dateLabel}</span>
-              <span className="text-[var(--color-primary)] font-semibold">
-                {s.attended}
-                <span className="text-[var(--color-text-muted)] font-normal text-xs">
-                  {" "}
-                  / {s.rosterSize}
+            <li key={s.sessionId}>
+              <Link
+                href={`/teams/${teamId}/stats/sessions/${s.sessionId}`}
+                className="flex items-center justify-between gap-2 text-sm border border-[var(--color-border)] rounded-md bg-[var(--color-surface)] px-3 py-2"
+              >
+                <span className="font-medium">{s.dateLabel}</span>
+                <span className="text-[var(--color-primary)] font-semibold">
+                  {s.attended}
+                  <span className="text-[var(--color-text-muted)] font-normal text-xs">
+                    {" "}
+                    / {s.rosterSize}
+                  </span>
                 </span>
-              </span>
+              </Link>
             </li>
           ))}
         </ul>
       )}
       <p className="mt-3 text-[10px] text-[var(--color-text-muted)]">
-        Attended = marked Yes. No and Not communicated shown in overall totals.
+        Tap a session for player details. Filter by attended, not attended, or not
+        communicated.
       </p>
     </TeamShell>
   );
