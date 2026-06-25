@@ -177,3 +177,152 @@ export function formatGameWhen(gameDate: Date, gameTime: string | null) {
 export function formatGameScore(scoreUs: number, scoreThem: number) {
   return `${scoreUs}–${scoreThem}`;
 }
+
+export type GamePlayerLine = {
+  playerId: string;
+  name: string;
+  isPlaying: boolean;
+  goals: number;
+  assists: number;
+  yellowCards: number;
+  redCards: number;
+  rating: number | null;
+};
+
+export async function getGameLineupCount(gameId: string, teamId: string) {
+  return prisma.gameAppearance.count({
+    where: { gameId, isPlaying: true, game: { teamId } },
+  });
+}
+
+export async function getGameForTrack(gameId: string, teamId: string) {
+  const game = await prisma.game.findFirst({
+    where: { id: gameId, teamId },
+    include: {
+      appearances: {
+        where: { isPlaying: true },
+        include: { player: true },
+        orderBy: { player: { lastName: "asc" } },
+      },
+    },
+  });
+  if (!game) return null;
+
+  const players: GamePlayerLine[] = game.appearances.map((a) => ({
+    playerId: a.playerId,
+    name: playerDisplayName(a.player),
+    isPlaying: true,
+    goals: a.goals,
+    assists: a.assists,
+    yellowCards: a.yellowCards,
+    redCards: a.redCards,
+    rating: a.rating,
+  }));
+
+  return { game, players };
+}
+
+function hasRecordedStats(a: {
+  goals: number;
+  assists: number;
+  yellowCards: number;
+  redCards: number;
+  rating: number | null;
+}) {
+  return (
+    a.goals > 0 ||
+    a.assists > 0 ||
+    a.yellowCards > 0 ||
+    a.redCards > 0 ||
+    a.rating != null
+  );
+}
+
+export async function getGameStatSummary(gameId: string, teamId: string) {
+  const game = await prisma.game.findFirst({
+    where: { id: gameId, teamId },
+    include: {
+      appearances: {
+        where: { isPlaying: true },
+        include: { player: true },
+        orderBy: { player: { lastName: "asc" } },
+      },
+    },
+  });
+  if (!game) return null;
+
+  const withStats = game.appearances.filter(hasRecordedStats);
+
+  return {
+    game,
+    when: formatGameWhen(game.gameDate, game.gameTime),
+    score: formatGameScore(game.scoreUs, game.scoreThem),
+    players: withStats.map((a) => ({
+      playerId: a.playerId,
+      name: playerDisplayName(a.player),
+      goals: a.goals,
+      assists: a.assists,
+      yellowCards: a.yellowCards,
+      redCards: a.redCards,
+      rating: a.rating,
+    })),
+    lineupCount: game.appearances.length,
+  };
+}
+
+export async function getPlayerGameStats(
+  teamId: string,
+  playerId: string,
+): Promise<PlayerSeasonGameStats> {
+  const season = await requireActiveSeason(teamId);
+  const player = await prisma.player.findFirst({ where: { id: playerId, teamId } });
+  if (!player) {
+    return {
+      playerId,
+      name: "Unknown",
+      gamesPlayed: 0,
+      goals: 0,
+      assists: 0,
+      yellowCards: 0,
+      redCards: 0,
+      avgRating: null,
+    };
+  }
+
+  const games = await prisma.game.findMany({
+    where: { teamId, seasonId: season.id },
+    include: { appearances: true },
+  });
+
+  let gamesPlayed = 0;
+  let goals = 0;
+  let assists = 0;
+  let yellowCards = 0;
+  let redCards = 0;
+  const ratings: number[] = [];
+
+  for (const g of games) {
+    const app = g.appearances.find((a) => a.playerId === playerId);
+    if (!app?.isPlaying) continue;
+    gamesPlayed++;
+    goals += app.goals;
+    assists += app.assists;
+    yellowCards += app.yellowCards;
+    redCards += app.redCards;
+    if (app.rating != null) ratings.push(app.rating);
+  }
+
+  return {
+    playerId,
+    name: playerDisplayName(player),
+    gamesPlayed,
+    goals,
+    assists,
+    yellowCards,
+    redCards,
+    avgRating:
+      ratings.length > 0
+        ? Math.round((ratings.reduce((a, b) => a + b, 0) / ratings.length) * 10) / 10
+        : null,
+  };
+}

@@ -7,18 +7,20 @@ export type TeamNavKey =
   | "planned"
   | "actual"
   | "games"
-  | "stats"
+  | "reports"
   | "roster"
   | "season";
 
-export type StatsTab = "players" | "sessions" | "overall";
+export type ReportsMode = "training" | "games";
+export type TrainingReportTab = "players" | "sessions" | "overall";
 
 type Props = {
   teamId: string;
   teamName: string;
   seasonLabel?: string;
   active: TeamNavKey;
-  statsTab?: StatsTab;
+  reportsMode?: ReportsMode;
+  trainingTab?: TrainingReportTab;
   children: React.ReactNode;
 };
 
@@ -28,13 +30,33 @@ const NAV: { key: TeamNavKey; label: string; href: (id: string) => string }[] = 
   { key: "planned", label: "Plan", href: (id) => `/teams/${id}/planned` },
   { key: "actual", label: "Actual", href: (id) => `/teams/${id}/actual` },
   { key: "games", label: "Games", href: (id) => `/teams/${id}/games` },
-  { key: "stats", label: "Stats", href: (id) => `/teams/${id}/stats/players` },
+  {
+    key: "reports",
+    label: "Reports",
+    href: (id) => `/teams/${id}/reports/training/players`,
+  },
 ];
 
-const STATS_TABS: { key: StatsTab; label: string; href: (id: string) => string }[] = [
-  { key: "players", label: "By player", href: (id) => `/teams/${id}/stats/players` },
-  { key: "sessions", label: "By session", href: (id) => `/teams/${id}/stats/sessions` },
-  { key: "overall", label: "Overall", href: (id) => `/teams/${id}/stats/overall` },
+const TRAINING_TABS: {
+  key: TrainingReportTab;
+  label: string;
+  href: (id: string) => string;
+}[] = [
+  {
+    key: "players",
+    label: "By player",
+    href: (id) => `/teams/${id}/reports/training/players`,
+  },
+  {
+    key: "sessions",
+    label: "By session",
+    href: (id) => `/teams/${id}/reports/training/sessions`,
+  },
+  {
+    key: "overall",
+    label: "Overall",
+    href: (id) => `/teams/${id}/reports/training/overall`,
+  },
 ];
 
 export function TeamShell({
@@ -42,7 +64,8 @@ export function TeamShell({
   teamName,
   seasonLabel,
   active,
-  statsTab,
+  reportsMode,
+  trainingTab,
   children,
 }: Props) {
   return (
@@ -97,27 +120,55 @@ export function TeamShell({
           </ul>
         </nav>
 
-        {active === "stats" && statsTab ? (
+        {active === "reports" && reportsMode ? (
           <nav
             className="border-t border-white/15 bg-[var(--color-surface)]"
-            aria-label="Stats views"
+            aria-label="Report type"
           >
             <ul className="flex max-w-lg mx-auto">
-              {STATS_TABS.map((tab) => (
-                <li key={tab.key} className="flex-1">
-                  <Link
-                    href={tab.href(teamId)}
-                    className={`flex items-center justify-center min-h-9 text-[11px] font-medium ${
-                      statsTab === tab.key
-                        ? "text-[var(--color-primary)] border-b-2 border-[var(--color-primary)]"
-                        : "text-[var(--color-text-muted)]"
-                    }`}
-                  >
-                    {tab.label}
-                  </Link>
-                </li>
-              ))}
+              <li className="flex-1">
+                <Link
+                  href={`/teams/${teamId}/reports/training/players`}
+                  className={`flex items-center justify-center min-h-9 text-[11px] font-semibold ${
+                    reportsMode === "training"
+                      ? "text-[var(--color-primary)] border-b-2 border-[var(--color-primary)]"
+                      : "text-[var(--color-text-muted)]"
+                  }`}
+                >
+                  Training
+                </Link>
+              </li>
+              <li className="flex-1">
+                <Link
+                  href={`/teams/${teamId}/reports/games`}
+                  className={`flex items-center justify-center min-h-9 text-[11px] font-semibold ${
+                    reportsMode === "games"
+                      ? "text-[var(--color-primary)] border-b-2 border-[var(--color-primary)]"
+                      : "text-[var(--color-text-muted)]"
+                  }`}
+                >
+                  Games
+                </Link>
+              </li>
             </ul>
+            {reportsMode === "training" && trainingTab ? (
+              <ul className="flex max-w-lg mx-auto border-t border-[var(--color-border)]">
+                {TRAINING_TABS.map((tab) => (
+                  <li key={tab.key} className="flex-1">
+                    <Link
+                      href={tab.href(teamId)}
+                      className={`flex items-center justify-center min-h-9 text-[10px] font-medium ${
+                        trainingTab === tab.key
+                          ? "text-[var(--color-primary)] bg-[var(--color-bg)]"
+                          : "text-[var(--color-text-muted)]"
+                      }`}
+                    >
+                      {tab.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
           </nav>
         ) : null}
       </header>

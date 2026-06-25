@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-export default async function StatsRedirect({
+export default async function ReportsPage({
   params,
 }: {
   params: Promise<{ teamId: string }>;

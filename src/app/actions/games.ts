@@ -11,11 +11,14 @@ import { prisma } from "@/lib/prisma";
 import { requireTeamAccess } from "@/lib/rbac";
 
 function gamePaths(teamId: string, gameId?: string) {
-  const paths = [
-    `/teams/${teamId}/games`,
-    `/teams/${teamId}/games/stats`,
-  ];
-  if (gameId) paths.push(`/teams/${teamId}/games/${gameId}`);
+  const paths = [`/teams/${teamId}/games`, `/teams/${teamId}/reports/games`];
+  if (gameId) {
+    paths.push(
+      `/teams/${teamId}/games/${gameId}`,
+      `/teams/${teamId}/games/${gameId}/roster`,
+      `/teams/${teamId}/games/${gameId}/track`,
+    );
+  }
   return paths;
 }
 
@@ -23,8 +26,6 @@ const newGameSchema = z.object({
   gameDate: z.string().min(1),
   gameTime: z.string().optional(),
   opponent: z.string().min(1).max(120),
-  scoreUs: z.coerce.number().int().min(0).optional(),
-  scoreThem: z.coerce.number().int().min(0).optional(),
 });
 
 export async function createGameAction(teamId: string, formData: FormData) {
@@ -35,8 +36,6 @@ export async function createGameAction(teamId: string, formData: FormData) {
     gameDate: formData.get("gameDate"),
     gameTime: formData.get("gameTime"),
     opponent: formData.get("opponent"),
-    scoreUs: formData.get("scoreUs"),
-    scoreThem: formData.get("scoreThem"),
   });
   if (!parsed.success) redirect(`/teams/${teamId}/games/new?error=invalid`);
 
@@ -44,91 +43,95 @@ export async function createGameAction(teamId: string, formData: FormData) {
     gameDate: parseDateString(parsed.data.gameDate),
     gameTime: parsed.data.gameTime,
     opponent: parsed.data.opponent,
-    scoreUs: parsed.data.scoreUs ?? 0,
-    scoreThem: parsed.data.scoreThem ?? 0,
   });
 
-  redirect(`/teams/${teamId}/games/${game.id}`);
+  redirect(`/teams/${teamId}/games/${game.id}/roster`);
 }
 
-export async function updateGameScoreAction(
+export async function saveGameRosterAction(teamId: string, gameId: string, formData: FormData) {
+  const session = await requireStaffSession();
+  await requireTeamAccess(session, teamId);
+
+  const playingIds = formData.getAll("playing").map(String);
+  const appearances = await prisma.gameAppearance.findMany({
+    where: { gameId, game: { teamId } },
+    select: { id: true, playerId: true },
+  });
+
+  for (const app of appearances) {
+    await prisma.gameAppearance.update({
+      where: { id: app.id },
+      data: { isPlaying: playingIds.includes(app.playerId) },
+    });
+  }
+
+  const next = formData.get("next");
+  if (next === "track") {
+    redirect(`/teams/${teamId}/games/${gameId}/track`);
+  }
+  for (const p of gamePaths(teamId, gameId)) revalidatePath(p);
+}
+
+export async function incrementScoreAction(
   teamId: string,
   gameId: string,
-  formData: FormData,
+  side: "us" | "them",
 ) {
   const session = await requireStaffSession();
   await requireTeamAccess(session, teamId);
 
-  const scoreUs = Math.max(0, Number(formData.get("scoreUs")) || 0);
-  const scoreThem = Math.max(0, Number(formData.get("scoreThem")) || 0);
-
   await prisma.game.updateMany({
     where: { id: gameId, teamId },
-    data: { scoreUs, scoreThem },
+    data:
+      side === "us"
+        ? { scoreUs: { increment: 1 } }
+        : { scoreThem: { increment: 1 } },
   });
 
   for (const p of gamePaths(teamId, gameId)) revalidatePath(p);
 }
 
-export async function updateGameNotesAction(teamId: string, gameId: string, formData: FormData) {
+export async function decrementScoreAction(
+  teamId: string,
+  gameId: string,
+  side: "us" | "them",
+) {
   const session = await requireStaffSession();
   await requireTeamAccess(session, teamId);
 
+  const game = await prisma.game.findFirst({ where: { id: gameId, teamId } });
+  if (!game) return;
+
+  const field = side === "us" ? "scoreUs" : "scoreThem";
+  const current = side === "us" ? game.scoreUs : game.scoreThem;
+  if (current <= 0) return;
+
   await prisma.game.updateMany({
     where: { id: gameId, teamId },
-    data: {
-      teamNotes: String(formData.get("teamNotes") ?? "").trim() || null,
-      opponentNotes: String(formData.get("opponentNotes") ?? "").trim() || null,
-    },
+    data: { [field]: { decrement: 1 } },
   });
 
   for (const p of gamePaths(teamId, gameId)) revalidatePath(p);
 }
 
-export async function togglePlayingAction(
+type PlayerStat = "goals" | "assists" | "yellowCards" | "redCards";
+
+export async function incrementPlayerStatAction(
   teamId: string,
   gameId: string,
   playerId: string,
-  isPlaying: boolean,
+  stat: PlayerStat,
 ) {
   const session = await requireStaffSession();
   await requireTeamAccess(session, teamId);
 
   await prisma.gameAppearance.updateMany({
-    where: { gameId, playerId, game: { teamId } },
-    data: { isPlaying },
-  });
-
-  revalidatePath(`/teams/${teamId}/games/${gameId}`);
-  revalidatePath(`/teams/${teamId}/games/stats`);
-}
-
-export async function updateAppearanceAction(
-  teamId: string,
-  gameId: string,
-  playerId: string,
-  formData: FormData,
-) {
-  const session = await requireStaffSession();
-  await requireTeamAccess(session, teamId);
-
-  const goals = Math.max(0, Number(formData.get("goals")) || 0);
-  const assists = Math.max(0, Number(formData.get("assists")) || 0);
-  const yellowCards = Math.max(0, Number(formData.get("yellowCards")) || 0);
-  const redCards = Math.max(0, Number(formData.get("redCards")) || 0);
-  const ratingRaw = formData.get("rating");
-  const rating =
-    ratingRaw && String(ratingRaw).length > 0
-      ? Math.min(5, Math.max(1, Number(ratingRaw)))
-      : null;
-  const notes = String(formData.get("notes") ?? "").trim() || null;
-
-  await prisma.gameAppearance.updateMany({
-    where: { gameId, playerId, game: { teamId } },
-    data: { goals, assists, yellowCards, redCards, rating, notes },
+    where: { gameId, playerId, game: { teamId }, isPlaying: true },
+    data: { [stat]: { increment: 1 } },
   });
 
   for (const p of gamePaths(teamId, gameId)) revalidatePath(p);
+  revalidatePath(`/teams/${teamId}/reports/players/${playerId}`);
 }
 
 export async function completeGameAction(teamId: string, gameId: string) {
@@ -141,5 +144,5 @@ export async function completeGameAction(teamId: string, gameId: string) {
   });
 
   for (const p of gamePaths(teamId, gameId)) revalidatePath(p);
-  redirect(`/teams/${teamId}/games`);
+  redirect(`/teams/${teamId}/games/${gameId}`);
 }

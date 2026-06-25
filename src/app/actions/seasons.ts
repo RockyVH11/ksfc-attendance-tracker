@@ -39,7 +39,8 @@ export async function archiveSeasonAction(teamId: string, formData: FormData) {
     `/teams/${teamId}/planned`,
     `/teams/${teamId}/actual`,
     `/teams/${teamId}/games`,
-    `/teams/${teamId}/stats`,
+    `/teams/${teamId}/reports/training/players`,
+    `/teams/${teamId}/reports/games`,
     `/teams/${teamId}/season`,
   ];
   for (const p of paths) revalidatePath(p, "layout");

@@ -52,5 +52,6 @@ export async function setPlayerActiveAction(
 
   revalidatePath(`/teams/${teamId}/players`);
   revalidatePath(`/teams/${teamId}/planned`);
-  revalidatePath(`/teams/${teamId}/stats`);
+  revalidatePath(`/teams/${teamId}/reports/training/players`);
+  revalidatePath(`/teams/${teamId}/reports/games`);
 }

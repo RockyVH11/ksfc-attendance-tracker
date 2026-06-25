@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import type { PlayerSeasonGameStats, SeasonGameStats } from "@/lib/games";
 
@@ -13,7 +14,13 @@ const SORT_OPTIONS: { key: SortKey; label: string }[] = [
   { key: "redCards", label: "RC" },
 ];
 
-export function GameSeasonStatsTable({ stats }: { stats: SeasonGameStats }) {
+export function GameSeasonStatsTable({
+  teamId,
+  stats,
+}: {
+  teamId: string;
+  stats: SeasonGameStats;
+}) {
   const [sortKey, setSortKey] = useState<SortKey>("gamesPlayed");
 
   const sorted = useMemo(() => {
@@ -68,7 +75,7 @@ export function GameSeasonStatsTable({ stats }: { stats: SeasonGameStats }) {
       ) : (
         <ul className="space-y-1 text-sm">
           {sorted.map((p) => (
-            <PlayerRow key={p.playerId} player={p} />
+            <PlayerRow key={p.playerId} teamId={teamId} player={p} />
           ))}
         </ul>
       )}
@@ -88,10 +95,21 @@ function SummaryCard({ label, value }: { label: string; value: number }) {
   );
 }
 
-function PlayerRow({ player: p }: { player: PlayerSeasonGameStats }) {
+function PlayerRow({
+  teamId,
+  player: p,
+}: {
+  teamId: string;
+  player: PlayerSeasonGameStats;
+}) {
   return (
     <li className="flex gap-1 items-center border-b border-[var(--color-border)] py-1">
-      <span className="flex-1 min-w-0 truncate font-medium text-xs">{p.name}</span>
+      <Link
+        href={`/teams/${teamId}/reports/players/${p.playerId}`}
+        className="flex-1 min-w-0 truncate font-medium text-xs text-[var(--color-primary)] underline underline-offset-2"
+      >
+        {p.name}
+      </Link>
       <span className="w-7 text-center text-xs">{p.gamesPlayed}</span>
       <span className="w-6 text-center text-xs">{p.goals}</span>
       <span className="w-6 text-center text-xs">{p.assists}</span>

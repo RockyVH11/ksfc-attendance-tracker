@@ -1,25 +1,22 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
-import {
-  completeGameAction,
-  updateGameNotesAction,
-  updateGameScoreAction,
-} from "@/app/actions/games";
-import { GamePlayerRow } from "@/components/game-player-row";
+import { completeGameAction } from "@/app/actions/games";
 import { TeamShell } from "@/components/team-shell";
-import { formatGameScore, formatGameWhen, getGameWithRoster } from "@/lib/games";
+import { formatGameScore, getGameStatSummary } from "@/lib/games";
 import { getTeamForPage } from "@/lib/team-page";
+import { GameStatus } from "@prisma/client";
 
-export default async function GameDetailPage({
+export default async function GameSummaryPage({
   params,
 }: {
   params: Promise<{ teamId: string; gameId: string }>;
 }) {
   const { teamId, gameId } = await params;
   const { team, season } = await getTeamForPage(teamId);
-  const data = await getGameWithRoster(gameId, teamId);
-  if (!data) notFound();
+  const summary = await getGameStatSummary(gameId, teamId);
+  if (!summary) notFound();
 
-  const { game, rows } = data;
+  const { game, when, players, lineupCount } = summary;
 
   return (
     <TeamShell
@@ -30,112 +27,81 @@ export default async function GameDetailPage({
     >
       <div className="mb-3">
         <h2 className="text-sm font-semibold">vs {game.opponent}</h2>
-        <p className="text-xs text-[var(--color-text-muted)]">
-          {formatGameWhen(game.gameDate, game.gameTime)}
+        <p className="text-xs text-[var(--color-text-muted)]">{when}</p>
+        <p className="text-2xl font-bold text-[var(--color-primary)] mt-2">
+          {formatGameScore(game.scoreUs, game.scoreThem)}
         </p>
       </div>
 
-      <form
-        action={updateGameScoreAction.bind(null, teamId, gameId)}
-        className="mb-4 rounded-md border-2 border-[var(--color-primary)] bg-[var(--color-surface)] p-3"
-      >
-        <p className="text-xs font-semibold mb-2">Final score (team totals)</p>
-        <div className="flex items-end gap-3">
-          <label className="text-[10px] font-medium flex-1">
-            US
-            <input
-              name="scoreUs"
-              type="number"
-              min={0}
-              defaultValue={game.scoreUs}
-              className="mt-1 w-full min-h-10 px-2 rounded border border-[var(--color-border)] text-lg font-bold text-center"
-            />
-          </label>
-          <span className="pb-2 text-lg font-bold text-[var(--color-text-muted)]">–</span>
-          <label className="text-[10px] font-medium flex-1">
-            Them
-            <input
-              name="scoreThem"
-              type="number"
-              min={0}
-              defaultValue={game.scoreThem}
-              className="mt-1 w-full min-h-10 px-2 rounded border border-[var(--color-border)] text-lg font-bold text-center"
-            />
-          </label>
-        </div>
-        <p className="text-[10px] text-[var(--color-text-muted)] mt-2">
-          Season GF/GA use this score — not the sum of player goals.
-        </p>
-        <button
-          type="submit"
-          className="mt-2 w-full min-h-9 rounded bg-[var(--color-primary)] text-white text-xs font-semibold"
+      <div className="flex gap-2 mb-4">
+        <Link
+          href={`/teams/${teamId}/games/${gameId}/track`}
+          className="flex-1 min-h-10 rounded-md bg-[var(--color-primary)] text-white text-xs font-semibold text-center leading-10"
         >
-          Save score
-        </button>
-        <p className="mt-2 text-center text-sm font-bold text-[var(--color-primary)]">
-          {formatGameScore(game.scoreUs, game.scoreThem)}
-        </p>
-      </form>
-
-      <form
-        action={updateGameNotesAction.bind(null, teamId, gameId)}
-        className="mb-4 rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] p-2 space-y-2"
-      >
-        <label className="block text-[10px] font-medium">
-          Team notes
-          <textarea
-            name="teamNotes"
-            rows={2}
-            defaultValue={game.teamNotes ?? ""}
-            className="mt-0.5 w-full px-2 py-1 rounded border border-[var(--color-border)] text-xs"
-          />
-        </label>
-        <label className="block text-[10px] font-medium">
-          Opponent notes
-          <textarea
-            name="opponentNotes"
-            rows={2}
-            defaultValue={game.opponentNotes ?? ""}
-            className="mt-0.5 w-full px-2 py-1 rounded border border-[var(--color-border)] text-xs"
-          />
-        </label>
-        <button
-          type="submit"
-          className="w-full min-h-9 rounded bg-[var(--color-primary-muted)] text-white text-xs font-semibold"
+          Track / edit
+        </Link>
+        <Link
+          href={`/teams/${teamId}/games/${gameId}/roster`}
+          className="min-h-10 px-3 rounded-md border border-[var(--color-primary)] text-[var(--color-primary)] text-xs font-semibold leading-10"
         >
-          Save notes
-        </button>
-      </form>
+          Roster
+        </Link>
+      </div>
 
-      <p className="text-xs text-[var(--color-text-muted)] mb-2">
-        Player G/A/YC/RC are for individual tracking (own goals, guests, etc.).
+      <h3 className="text-xs font-semibold mb-2">
+        Player stats ({players.length} with recorded stats · {lineupCount} in lineup)
+      </h3>
+      {players.length === 0 ? (
+        <p className="text-xs text-[var(--color-text-muted)]">
+          No player stats recorded yet. Open Track to add goals, assists, cards.
+        </p>
+      ) : (
+        <ul className="space-y-2">
+          {players.map((p) => (
+            <li
+              key={p.playerId}
+              className="rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm"
+            >
+              <Link
+                href={`/teams/${teamId}/reports/players/${p.playerId}`}
+                className="font-semibold text-[var(--color-primary)] underline underline-offset-2"
+              >
+                {p.name}
+              </Link>
+              <p className="text-xs text-[var(--color-text-muted)]">
+                {[
+                  p.goals > 0 ? `${p.goals} G` : null,
+                  p.assists > 0 ? `${p.assists} A` : null,
+                  p.yellowCards > 0 ? `${p.yellowCards} YC` : null,
+                  p.redCards > 0 ? `${p.redCards} RC` : null,
+                  p.rating != null ? `${p.rating}★` : null,
+                ]
+                  .filter(Boolean)
+                  .join(" · ") || "—"}
+              </p>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {game.status !== GameStatus.COMPLETED ? (
+        <form action={completeGameAction.bind(null, teamId, gameId)} className="mt-6">
+          <button
+            type="submit"
+            className="w-full min-h-11 rounded-md border-2 border-[var(--color-primary)] text-[var(--color-primary)] font-semibold text-sm"
+          >
+            Mark game complete
+          </button>
+        </form>
+      ) : (
+        <p className="mt-4 text-xs text-[var(--color-success)] font-medium">Game final</p>
+      )}
+
+      <p className="mt-4">
+        <Link href={`/teams/${teamId}/games`} className="text-sm text-[var(--color-primary)] underline">
+          ← Games list
+        </Link>
       </p>
-      <ul className="space-y-1.5">
-        {rows.map((r) => (
-          <GamePlayerRow
-            key={r.player.id}
-            teamId={teamId}
-            gameId={gameId}
-            player={r.player}
-            isPlaying={r.isPlaying}
-            goals={r.goals}
-            assists={r.assists}
-            yellowCards={r.yellowCards}
-            redCards={r.redCards}
-            rating={r.rating}
-            notes={r.notes}
-          />
-        ))}
-      </ul>
-
-      <form action={completeGameAction.bind(null, teamId, gameId)} className="mt-6">
-        <button
-          type="submit"
-          className="w-full min-h-11 rounded-md border-2 border-[var(--color-primary)] text-[var(--color-primary)] font-semibold text-sm"
-        >
-          Mark game complete
-        </button>
-      </form>
     </TeamShell>
   );
 }

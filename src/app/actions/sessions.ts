@@ -19,7 +19,10 @@ function teamPaths(teamId: string) {
   return [
     `${base}/planned`,
     `${base}/actual`,
-    `${base}/stats`,
+    `${base}/reports/training/players`,
+    `${base}/reports/training/sessions`,
+    `${base}/reports/training/overall`,
+    `${base}/reports/games`,
     `${base}/games`,
     `${base}/season`,
   ];
@@ -92,7 +95,9 @@ export async function updateAttendanceAction(
     revalidatePath(`/teams/${teamId}/planned`);
   } else {
     revalidatePath(`/teams/${teamId}/actual/${sessionId}`);
-    revalidatePath(`/teams/${teamId}/stats`);
+    revalidatePath(`/teams/${teamId}/reports/training/players`);
+    revalidatePath(`/teams/${teamId}/reports/training/sessions`);
+    revalidatePath(`/teams/${teamId}/reports/training/overall`);
   }
 }
 
@@ -134,7 +139,9 @@ export async function createActualSessionAction(
       plannedSessionId,
     );
     revalidatePath(`/teams/${teamId}/actual`);
-    revalidatePath(`/teams/${teamId}/stats`);
+    revalidatePath(`/teams/${teamId}/reports/training/players`);
+    revalidatePath(`/teams/${teamId}/reports/training/sessions`);
+    revalidatePath(`/teams/${teamId}/reports/training/overall`);
     redirect(`/teams/${teamId}/actual/${created.id}`);
   } catch (e) {
     if (e instanceof Error && e.message === "ACTUAL_EXISTS") {
@@ -154,6 +161,8 @@ export async function completeActualSessionAction(teamId: string, sessionId: str
   });
 
   revalidatePath(`/teams/${teamId}/actual`);
-  revalidatePath(`/teams/${teamId}/stats`);
+  revalidatePath(`/teams/${teamId}/reports/training/players`);
+  revalidatePath(`/teams/${teamId}/reports/training/sessions`);
+  revalidatePath(`/teams/${teamId}/reports/training/overall`);
   redirect(`/teams/${teamId}/actual`);
 }

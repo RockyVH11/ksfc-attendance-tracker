@@ -2,6 +2,7 @@ import { AttendanceStatus, SessionKind, SessionStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { formatDateLabel, playerDisplayName } from "@/lib/dates";
 import { requireActiveSeason } from "@/lib/seasons";
+import type { PlayerSeasonGameStats } from "@/lib/games";
 
 export type SessionStatRow = {
   sessionId: string;
@@ -48,6 +49,19 @@ export type SessionDetail = {
 };
 
 export type SessionFilter = "YES" | "NO" | "NOT_COMMUNICATED";
+
+export type PlayerFullReport = {
+  playerId: string;
+  name: string;
+  attendance: {
+    sessionsHeld: number;
+    yes: number;
+    no: number;
+    notCommunicated: number;
+    ratePct: number;
+  };
+  games: PlayerSeasonGameStats;
+};
 
 function shortPlayerName(firstName: string, lastName: string) {
   const initial = lastName.charAt(0) ? `${lastName.charAt(0)}.` : "";
@@ -182,6 +196,14 @@ export async function getPlayerStats(teamId: string): Promise<PlayerStatRow[]> {
   });
 }
 
+export async function getPlayerStatRow(
+  teamId: string,
+  playerId: string,
+): Promise<PlayerStatRow | null> {
+  const rows = await getPlayerStats(teamId);
+  return rows.find((r) => r.playerId === playerId) ?? null;
+}
+
 export async function getOverallStats(teamId: string): Promise<OverallStats> {
   const sessionRows = await getSessionStats(teamId);
   const sessionCount = sessionRows.length;
@@ -215,5 +237,32 @@ export async function getOverallStats(teamId: string): Promise<OverallStats> {
     totalNo,
     totalNotCommunicated,
     overallRatePct,
+  };
+}
+
+export async function getPlayerFullReport(
+  teamId: string,
+  playerId: string,
+): Promise<PlayerFullReport | null> {
+  const player = await prisma.player.findFirst({
+    where: { id: playerId, teamId },
+  });
+  if (!player) return null;
+
+  const attendance = await getPlayerStatRow(teamId, playerId);
+  const { getPlayerGameStats } = await import("@/lib/games");
+  const games = await getPlayerGameStats(teamId, playerId);
+
+  return {
+    playerId,
+    name: playerDisplayName(player),
+    attendance: attendance ?? {
+      sessionsHeld: 0,
+      yes: 0,
+      no: 0,
+      notCommunicated: 0,
+      ratePct: 0,
+    },
+    games,
   };
 }

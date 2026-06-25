@@ -20,20 +20,12 @@ export default async function GamesPage({
       seasonLabel={season.label}
       active="games"
     >
-      <div className="flex gap-2 mb-3">
-        <Link
-          href={`/teams/${teamId}/games/new`}
-          className="flex-1 min-h-10 rounded-md bg-[var(--color-primary)] text-white text-sm font-semibold text-center leading-10"
-        >
-          + New game
-        </Link>
-        <Link
-          href={`/teams/${teamId}/games/stats`}
-          className="min-h-10 px-3 rounded-md border border-[var(--color-primary)] text-[var(--color-primary)] text-sm font-semibold leading-10"
-        >
-          Season stats
-        </Link>
-      </div>
+      <Link
+        href={`/teams/${teamId}/games/new`}
+        className="block w-full min-h-10 rounded-md bg-[var(--color-primary)] text-white text-sm font-semibold text-center leading-10 mb-3"
+      >
+        + New game
+      </Link>
 
       {games.length === 0 ? (
         <p className="text-xs text-[var(--color-text-muted)]">No games this season yet.</p>

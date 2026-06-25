@@ -54,28 +54,10 @@ export default async function NewGamePage({
             className="mt-1 w-full min-h-10 px-2 rounded border border-[var(--color-border)]"
           />
         </label>
-        <div className="grid grid-cols-2 gap-3">
-          <label className="block text-xs font-medium">
-            US
-            <input
-              name="scoreUs"
-              type="number"
-              min={0}
-              defaultValue={0}
-              className="mt-1 w-full min-h-10 px-2 rounded border border-[var(--color-border)] text-center font-bold"
-            />
-          </label>
-          <label className="block text-xs font-medium">
-            Them
-            <input
-              name="scoreThem"
-              type="number"
-              min={0}
-              defaultValue={0}
-              className="mt-1 w-full min-h-10 px-2 rounded border border-[var(--color-border)] text-center font-bold"
-            />
-          </label>
-        </div>
+        <p className="text-xs text-[var(--color-text-muted)]">
+          Score and player stats are tracked on the next screens after you pick the
+          game roster.
+        </p>
         <button
           type="submit"
           className="w-full min-h-11 rounded-md bg-[var(--color-primary)] text-white font-semibold"
