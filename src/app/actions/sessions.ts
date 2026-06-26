@@ -151,6 +151,25 @@ export async function createActualSessionAction(
   }
 }
 
+export async function deleteActualSessionAction(teamId: string, sessionId: string) {
+  const session = await requireStaffSession();
+  await requireTeamAccess(session, teamId);
+
+  await prisma.trainingSession.updateMany({
+    where: {
+      id: sessionId,
+      teamId,
+      kind: SessionKind.ACTUAL,
+      status: { not: SessionStatus.DELETED },
+    },
+    data: { status: SessionStatus.DELETED },
+  });
+
+  for (const p of teamPaths(teamId)) revalidatePath(p);
+  revalidatePath(`/teams/${teamId}/reports`, "layout");
+  redirect(`/teams/${teamId}/actual`);
+}
+
 export async function completeActualSessionAction(teamId: string, sessionId: string) {
   const session = await requireStaffSession();
   await requireTeamAccess(session, teamId);

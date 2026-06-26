@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { deleteActualSessionAction } from "@/app/actions/sessions";
+import { ConfirmDeleteButton } from "@/components/confirm-delete-button";
 import { SessionDetailView } from "@/components/session-detail-view";
 import { TeamShell } from "@/components/team-shell";
 import { getSessionDetail } from "@/lib/stats";
@@ -30,7 +32,13 @@ export default async function ReportsTrainingSessionDetailPage({
       >
         ← Back to sessions
       </Link>
-      <h2 className="text-sm font-semibold mb-1">{detail.dateLabel}</h2>
+      <div className="flex items-start justify-between gap-2 mb-1">
+        <h2 className="text-sm font-semibold">{detail.dateLabel}</h2>
+        <ConfirmDeleteButton
+          action={deleteActualSessionAction.bind(null, teamId, sessionId)}
+          confirmMessage={`Delete training session on ${detail.dateLabel}? Attendance from this session will be removed from season reports.`}
+        />
+      </div>
       <p className="text-xs text-[var(--color-text-muted)] mb-4">
         Roster size: {detail.rosterSize}
       </p>

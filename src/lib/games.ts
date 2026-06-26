@@ -2,11 +2,14 @@ import { prisma } from "@/lib/prisma";
 import { formatDateLabel, playerDisplayName } from "@/lib/dates";
 import { getActivePlayers } from "@/lib/sessions";
 import { requireActiveSeason } from "@/lib/seasons";
+import { GameStatus } from "@prisma/client";
+
+export const activeGameWhere = { status: { not: GameStatus.DELETED } } as const;
 
 export async function listSeasonGames(teamId: string) {
   const season = await requireActiveSeason(teamId);
   return prisma.game.findMany({
-    where: { teamId, seasonId: season.id },
+    where: { teamId, seasonId: season.id, ...activeGameWhere },
     orderBy: [{ gameDate: "desc" }, { gameTime: "desc" }],
     include: {
       _count: { select: { appearances: { where: { isPlaying: true } } } },
@@ -16,7 +19,7 @@ export async function listSeasonGames(teamId: string) {
 
 export async function getGameWithRoster(gameId: string, teamId: string) {
   const game = await prisma.game.findFirst({
-    where: { id: gameId, teamId },
+    where: { id: gameId, teamId, ...activeGameWhere },
     include: {
       appearances: { include: { player: true } },
       season: true,
@@ -100,7 +103,7 @@ export type SeasonGameStats = {
 export async function getSeasonGameStats(teamId: string): Promise<SeasonGameStats> {
   const season = await requireActiveSeason(teamId);
   const games = await prisma.game.findMany({
-    where: { teamId, seasonId: season.id },
+    where: { teamId, seasonId: season.id, ...activeGameWhere },
     include: { appearances: { include: { player: true } } },
   });
 
@@ -191,13 +194,13 @@ export type GamePlayerLine = {
 
 export async function getGameLineupCount(gameId: string, teamId: string) {
   return prisma.gameAppearance.count({
-    where: { gameId, isPlaying: true, game: { teamId } },
+    where: { gameId, isPlaying: true, game: { teamId, ...activeGameWhere } },
   });
 }
 
 export async function getGameForTrack(gameId: string, teamId: string) {
   const game = await prisma.game.findFirst({
-    where: { id: gameId, teamId },
+    where: { id: gameId, teamId, ...activeGameWhere },
     include: {
       appearances: {
         where: { isPlaying: true },
@@ -240,7 +243,7 @@ function hasRecordedStats(a: {
 
 export async function getGameStatSummary(gameId: string, teamId: string) {
   const game = await prisma.game.findFirst({
-    where: { id: gameId, teamId },
+    where: { id: gameId, teamId, ...activeGameWhere },
     include: {
       appearances: {
         where: { isPlaying: true },
@@ -290,7 +293,7 @@ export async function getPlayerGameStats(
   }
 
   const games = await prisma.game.findMany({
-    where: { teamId, seasonId: season.id },
+    where: { teamId, seasonId: season.id, ...activeGameWhere },
     include: { appearances: true },
   });
 

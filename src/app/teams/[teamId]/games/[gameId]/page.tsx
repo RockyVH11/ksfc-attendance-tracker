@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { completeGameAction } from "@/app/actions/games";
+import { completeGameAction, deleteGameAction } from "@/app/actions/games";
+import { ConfirmDeleteButton } from "@/components/confirm-delete-button";
 import { TeamShell } from "@/components/team-shell";
 import { formatGameScore, getGameStatSummary } from "@/lib/games";
 import { getTeamForPage } from "@/lib/team-page";
@@ -25,12 +26,18 @@ export default async function GameSummaryPage({
       seasonLabel={season.label}
       active="games"
     >
-      <div className="mb-3">
-        <h2 className="text-sm font-semibold">vs {game.opponent}</h2>
-        <p className="text-xs text-[var(--color-text-muted)]">{when}</p>
-        <p className="text-2xl font-bold text-[var(--color-primary)] mt-2">
-          {formatGameScore(game.scoreUs, game.scoreThem)}
-        </p>
+      <div className="mb-3 flex items-start justify-between gap-2">
+        <div>
+          <h2 className="text-sm font-semibold">vs {game.opponent}</h2>
+          <p className="text-xs text-[var(--color-text-muted)]">{when}</p>
+          <p className="text-2xl font-bold text-[var(--color-primary)] mt-2">
+            {formatGameScore(game.scoreUs, game.scoreThem)}
+          </p>
+        </div>
+        <ConfirmDeleteButton
+          action={deleteGameAction.bind(null, teamId, gameId)}
+          confirmMessage={`Delete game vs ${game.opponent}? Scores and player stats from this game will be removed from season reports.`}
+        />
       </div>
 
       <div className="flex gap-2 mb-4">
