@@ -2,6 +2,7 @@
 
 import { useTransition } from "react";
 import {
+  decrementPlayerStatAction,
   decrementScoreAction,
   incrementPlayerStatAction,
   incrementScoreAction,
@@ -17,6 +18,8 @@ type Props = {
   players: GamePlayerLine[];
 };
 
+type PlayerStat = "goals" | "assists" | "yellowCards" | "redCards";
+
 export function GameTrackPanel({
   teamId,
   gameId,
@@ -25,6 +28,14 @@ export function GameTrackPanel({
   players,
 }: Props) {
   const [pending, startTransition] = useTransition();
+
+  function bump(playerId: string, stat: PlayerStat, delta: 1 | -1) {
+    startTransition(() => {
+      const action =
+        delta === 1 ? incrementPlayerStatAction : decrementPlayerStatAction;
+      void action(teamId, gameId, playerId, stat);
+    });
+  }
 
   return (
     <>
@@ -73,60 +84,33 @@ export function GameTrackPanel({
             >
               <p className="text-sm font-semibold mb-2 truncate">{p.name}</p>
               <div className="grid grid-cols-4 gap-1.5">
-                <StatButton
+                <StatColumn
                   label="G"
                   value={p.goals}
                   disabled={pending}
-                  onClick={() =>
-                    startTransition(() =>
-                      void incrementPlayerStatAction(teamId, gameId, p.playerId, "goals"),
-                    )
-                  }
+                  onInc={() => bump(p.playerId, "goals", 1)}
+                  onDec={() => bump(p.playerId, "goals", -1)}
                 />
-                <StatButton
+                <StatColumn
                   label="A"
                   value={p.assists}
                   disabled={pending}
-                  onClick={() =>
-                    startTransition(() =>
-                      void incrementPlayerStatAction(
-                        teamId,
-                        gameId,
-                        p.playerId,
-                        "assists",
-                      ),
-                    )
-                  }
+                  onInc={() => bump(p.playerId, "assists", 1)}
+                  onDec={() => bump(p.playerId, "assists", -1)}
                 />
-                <StatButton
+                <StatColumn
                   label="YC"
                   value={p.yellowCards}
                   disabled={pending}
-                  onClick={() =>
-                    startTransition(() =>
-                      void incrementPlayerStatAction(
-                        teamId,
-                        gameId,
-                        p.playerId,
-                        "yellowCards",
-                      ),
-                    )
-                  }
+                  onInc={() => bump(p.playerId, "yellowCards", 1)}
+                  onDec={() => bump(p.playerId, "yellowCards", -1)}
                 />
-                <StatButton
+                <StatColumn
                   label="RC"
                   value={p.redCards}
                   disabled={pending}
-                  onClick={() =>
-                    startTransition(() =>
-                      void incrementPlayerStatAction(
-                        teamId,
-                        gameId,
-                        p.playerId,
-                        "redCards",
-                      ),
-                    )
-                  }
+                  onInc={() => bump(p.playerId, "redCards", 1)}
+                  onDec={() => bump(p.playerId, "redCards", -1)}
                 />
               </div>
             </li>
@@ -174,27 +158,39 @@ function ScoreColumn({
   );
 }
 
-function StatButton({
+function StatColumn({
   label,
   value,
   disabled,
-  onClick,
+  onInc,
+  onDec,
 }: {
   label: string;
   value: number;
   disabled: boolean;
-  onClick: () => void;
+  onInc: () => void;
+  onDec: () => void;
 }) {
   return (
-    <button
-      type="button"
-      disabled={disabled}
-      onClick={onClick}
-      className="flex flex-col items-center rounded-md border border-[var(--color-border)] bg-[var(--color-bg)] py-1.5 active:bg-[var(--color-primary)] active:text-white"
-    >
+    <div className="flex flex-col items-center rounded-md border border-[var(--color-border)] bg-[var(--color-bg)] py-1">
       <span className="text-[10px] font-semibold">{label}</span>
-      <span className="text-lg font-bold tabular-nums">{value}</span>
-      <span className="text-[9px] opacity-70">+1</span>
-    </button>
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={onInc}
+        className="mt-0.5 min-h-7 w-full text-xs font-bold text-[var(--color-success)] active:bg-[var(--color-success)] active:text-white"
+      >
+        +1
+      </button>
+      <span className="text-base font-bold tabular-nums py-0.5">{value}</span>
+      <button
+        type="button"
+        disabled={disabled || value <= 0}
+        onClick={onDec}
+        className="min-h-7 w-full text-xs font-bold text-[var(--color-text-muted)] active:bg-[var(--color-border)] disabled:opacity-40"
+      >
+        −1
+      </button>
+    </div>
   );
 }

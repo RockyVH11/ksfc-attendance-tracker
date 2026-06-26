@@ -136,6 +136,30 @@ export async function incrementPlayerStatAction(
   revalidatePath(`/teams/${teamId}/reports/players/${playerId}`);
 }
 
+export async function decrementPlayerStatAction(
+  teamId: string,
+  gameId: string,
+  playerId: string,
+  stat: PlayerStat,
+) {
+  const session = await requireStaffSession();
+  await requireTeamAccess(session, teamId);
+
+  const appearance = await prisma.gameAppearance.findFirst({
+    where: { gameId, playerId, game: { teamId, ...activeGameWhere }, isPlaying: true },
+    select: { id: true, goals: true, assists: true, yellowCards: true, redCards: true },
+  });
+  if (!appearance || appearance[stat] <= 0) return;
+
+  await prisma.gameAppearance.update({
+    where: { id: appearance.id },
+    data: { [stat]: { decrement: 1 } },
+  });
+
+  for (const p of gamePaths(teamId, gameId)) revalidatePath(p);
+  revalidatePath(`/teams/${teamId}/reports/players/${playerId}`);
+}
+
 export async function completeGameAction(teamId: string, gameId: string) {
   const session = await requireStaffSession();
   await requireTeamAccess(session, teamId);
